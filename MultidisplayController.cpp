@@ -241,7 +241,7 @@ void  MultidisplayController::myconstructor() {
 
 	//Print the Info:
 #ifdef MULTIDISPLAY_V2
-	Serial.println("MultiDisplay 2.0!");
+	Serial.println("rAtTrax Beta ver-01 running MultiDisplay 2.0!");
 #else
 	Serial.println("MultiDisplay 1.1!");
 #endif
@@ -622,6 +622,7 @@ PLX: (v*2)+10
 SCT EGT: (v*368.2)+32
 Tech Edge 2AO: (v*2)+9
 Zeitronix: (v*2)+9.6
+14point7.com SLC-OEM (v*2)+10
 	 */
 #ifdef LAMBDA_WIDEBAND
 #ifdef LAMBDA_PLX_SMAFR
@@ -644,7 +645,11 @@ Zeitronix: (v*2)+9.6
 	//nur 10Bit ADC!
 	data.calLambdaF = ( (5.0*( ((float) data.anaIn[LAMBDAPIN]) /1023)) * 2 + 10 ) / 14.7;
 #endif
-
+#ifdef SLCOEM
+	//https://cdn.shopify.com/s/files/1/0189/1312/files/SLC_OEM_Documentation.zip
+	// air fuel ratio = 2*Voltage + 10
+	data.calLambdaF = ( (5.0*( ((float) data.anaIn[LAMBDAPIN]) /4095)) * 2 + 10 ) / 14.7;
+#endif
 	//CaseTemp: (damped)
 	data.calCaseTemp = data.calCaseTemp*0.9 + (500.0*data.anaIn[CASETEMPPIN]/4095.0)*0.1;  //thats how to get Â°C out from a LM35 with 12Bit ADW
 
@@ -749,7 +754,7 @@ Zeitronix: (v*2)+9.6
 	data.speedTotal -= data.speedReadings[data.speedIndex];
 	data.speedReadings[data.speedIndex] = analogRead(SPEEDPIN);
 	data.speedTotal += data.speedReadings[data.speedIndex];
-	data.speedIndex = data.speedIndex++;
+	data.speedIndex++;
 
 	if (data.speedIndex >= SPEEDSMOOTH)
 		data.speedIndex = 0;

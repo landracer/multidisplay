@@ -36,15 +36,16 @@
 /* ===============  Boost map sensor configuration ==================== */
 //#define USE_DIGIFANT_MAPSENSOR
 //#define BOOST_PLX_SMVACBOOST
-#define BOOST_MOTOROLA_MPX4250
-//#define BOOST_FREESCALE_MPXA6400A
+//#define BOOST_MOTOROLA_MPX4250
+#define BOOST_FREESCALE_MPXA6400A
 //on boostpin2
 //#define BOOST_BOSCH_200KPA
-
+#define BOOST_FREESCALE_MPXA6400A
 /* ===============  Lambda ==================== */
 #define LAMBDA_WIDEBAND
+#define SLCOEM
 //#define LAMBDA_PLX_SMAFR
-#define LAMBDA_INNOVATE_LC1
+//#define LAMBDA_INNOVATE_LC1
 //#define LAMBDASTANDALONE A2
 
 /* ===============  RPM ==================== */
@@ -52,8 +53,8 @@
 #define USE_RPM_ONBOARD
 //#define USE_DIGIFANT_RPM
 //20K
-#define RPMFACTOR 5.21
-//#define RPMFACTOR 2.34              //Calibration for RPM (its 2.34!)
+#define RPMFACTOR 9.2
+//#define RPMFACTOR 2.34           //Calibration for RPM (its 2.34!)
 
 /* ===============  Speed ==================== */
 //#define SPEEDFACTOR 0.390625
@@ -62,7 +63,7 @@
 //#define SPEEDCORRECTIONFACTOR 1
 
 /* ===============  Type K EGT ==================== */
-#define NUMBER_OF_ATTACHED_TYPE_K 7   //how many TypK`s are attached
+#define NUMBER_OF_ATTACHED_TYPE_K 6   //how many TypK`s are attached
 
 
 

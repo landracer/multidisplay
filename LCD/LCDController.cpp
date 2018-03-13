@@ -403,7 +403,7 @@ void LCDController::lcdShowIntro(int delayValue) {
 	lcd.printIn_P ( PSTR("isplay") );
 
 	lcd.commandWrite(0xD4+1);                  //Line=4
-	lcd.printIn_P ( PSTR("www.designer2k2.at") );
+	lcd.printIn_P ( PSTR("rAtTrax Beta  v01") );
 
 	//Set the LCD brightness: (This turns on the Light, looks nice)
 	setBrightness(2);
@@ -411,9 +411,9 @@ void LCDController::lcdShowIntro(int delayValue) {
 	//Flash the Shiftlight:
 
 	analogWrite(V1_RPMSHIFTLIGHTPIN,V1_RPM_HIGH_BRIGHT);
-	delay(50);
+	delay(1500);
 	analogWrite(V1_RPMSHIFTLIGHTPIN,V1_RPM_LOW_BRIGHT);
-	delay(50);
+	delay(1500);
 	analogWrite(V1_RPMSHIFTLIGHTPIN,V1_RPM_NO_BRIGHT);
 
 
@@ -793,35 +793,93 @@ void LCDController::printString (uint8_t pos, char* str) {
 	lcd.printIn (str);
 }
 
+
+// 2 different ways to achieve line printing ystart[linenumber] or 0x80(line1), 0xC0(line2),0x94(line3), 0xD4(line4) - work backwards...
+// **NEXT screen_init feature is for drawing ON ALL TIME lettering/wording - 'ON-ALL-THE-TIME' ONE-TIME print
+
 void LCDController::screen1_init() {
-    lcd.lcdCommandWriteAndPrintIn_P (0x80, PSTR("L  :"));
-    lcd.lcdCommandWriteAndPrintIn_P (0x80+9, PSTR("AGT:"));
-    lcd.lcdCommandWriteAndPrintIn_P (0xC0, PSTR("BST:"));
-    lcd.lcdCommandWriteAndPrintIn_P (0xC0+9, PSTR("P1 :"));
-    lcd.lcdCommandWriteAndPrintIn_P (ystart[2], PSTR("EFR SPEED:"));
+    lcd.lcdCommandWriteAndPrintIn_P (0x80, PSTR("Wo2>"));
+    lcd.lcdCommandWriteAndPrintIn_P (0x80+9, PSTR(">"));
+    lcd.lcdCommandWriteAndPrintIn_P (0x80+15, PSTR(">"));
+
+    lcd.lcdCommandWriteAndPrintIn_P (ystart[1], PSTR("RPM>"));
+    lcd.lcdCommandWriteAndPrintIn_P (ystart[2], PSTR("OIL>"));
+    lcd.lcdCommandWriteAndPrintIn_P (ystart[3], PSTR("H2O>"));
+    lcd.lcdCommandWriteAndPrintIn_P (ystart[3]+9, PSTR("FUEL>"));
+
+    lcd.lcdCommandWriteAndPrintIn_P (0xC0+9, PSTR(">"));
+    lcd.lcdCommandWriteAndPrintIn_P (0xC0+15, PSTR("> :"));
+    lcd.lcdCommandWriteAndPrintIn_P (ystart[2]+9, PSTR(">"));
+    lcd.lcdCommandWriteAndPrintIn_P (ystart[2]+15, PSTR("> :"));
+
+
+
+   // lcd.lcdCommandWriteAndPrintIn_P (ystart[3], PSTR("EFR SPEED:"));
 }
 
+
+
+// screen_draw feature is for drawing REFREHED sensor data - Pulls data to display from MCU
 
 void LCDController::screen1_draw() {
     printFloat2DP(ystart[0] + 4, data.calLambdaF);
+
+
 //    lcdController.printInt(lcdController.ystart[0] + 13, data.calThrottle, 3 );
 
-    printFloat2DP(ystart[1] + 4, data.calBoost);
-    printInt(ystart[1] + 13, data.VDOPres1, 4);
-    printLong (ystart[2] + 11, data.efr_speed, 6);
+
+    printInt(0x80 + 10, data.calEgt[0], 4 );
+    printInt(0x80 + 16, data.calEgt[1], 4 );
+    printInt(0xC0 + 10, data.calEgt[2], 4 );
+    printInt(0xC0 + 16, data.calEgt[3], 4 );
+    printInt(ystart[2] + 10, data.calEgt[4], 4 );
+    printInt(ystart[2] + 16, data.calEgt[5], 4 );
+
+
+
+ //   printFloat2DP(ystart[1] + 4, data.calBoost);
+    printInt(ystart[3] +14, data.VDOPres2, 5); //fuel pressure
+    printInt(ystart[2] +4, data.VDOPres3, 5); //oil pressure
+    printInt(ystart[1] +4, data.calRPM, 5);  //RPM
+    printInt(ystart[3] +4, data.VDOTemp3, 5); // WATER TEMP
+ //   printLong (ystart[3] + 11, data.efr_speed, 6);  //EFR turbocharger speed
 }
 
+//STARTING ANOTHER SCREEN LOOP WITH screen2_init - repeat programming style from screen1
+
 void LCDController::screen2_init() {
-    lcd.lcdCommandWriteAndPrintIn_P(ystart[0], PSTR("gear:"));
-    lcd.lcdCommandWriteAndPrintIn_P(ystart[0]+9, PSTR("speed:"));
-    lcd.lcdCommandWriteAndPrintIn_P(ystart[1], PSTR("Digifant:"));
+
+	lcd.lcdCommandWriteAndPrintIn_P (0x80, PSTR("PRESSURE--<VDO>-TEMP"));
+	lcd.lcdCommandWriteAndPrintIn_P (0xC0, PSTR("GAS>"));
+	lcd.lcdCommandWriteAndPrintIn_P (0x94, PSTR("MSC>"));
+	lcd.lcdCommandWriteAndPrintIn_P (0xD4, PSTR("OIL>"));
+
+		lcd.lcdCommandWriteAndPrintIn_P (0xC0+10, PSTR("|OIL>"));
+		lcd.lcdCommandWriteAndPrintIn_P (0x94+10, PSTR("|IAT>"));
+		lcd.lcdCommandWriteAndPrintIn_P (0xD4+10, PSTR("|H2o>"));
+
+	//old shit
+    //lcd.lcdCommandWriteAndPrintIn_P(ystart[0], PSTR("gear:"));
+    //lcd.lcdCommandWriteAndPrintIn_P(ystart[0]+9, PSTR("speed:"));
+   // lcd.lcdCommandWriteAndPrintIn_P (ystart[1], PSTR("ballsack:"));
 //    lcd.lcdCommandWriteAndPrintIn_P(lcdController.ystart[2] + 0, PSTR("ECT:"));
 //    lcd.lcdCommandWriteAndPrintIn_P(lcdController.ystart[2] + 9, PSTR("Ign:"));
-    lcd.lcdCommandWriteAndPrintIn_P(ystart[3] + 0, PSTR("LC :"));
+    //lcd.lcdCommandWriteAndPrintIn_P(ystart[3] + 0, PSTR("LC :"));
 }
 void LCDController::screen2_draw() {
-    printInt(0x80 + 6, data.gear, 1 );
-    printInt(0x80 + 15, data.speed, 3 );
+
+	printInt(0xC0 +5, data.VDOPres2, 5); //oil pressure
+	printInt(0x94 +5, data.VDOPres1, 5); //fuel pressure
+	printInt(0xD4 +5, data.VDOPres3, 5); //misc pressure
+
+		printInt(0xC0 +16, data.VDOTemp2, 4); //oil pressure
+		printInt(0x94 +16, data.VDOTemp1, 4); //fuel pressure
+		printInt(0xD4 +16, data.VDOTemp3, 4); //misc pressure
+
+
+	// printInt(0x80 + 6, data.gear, 1 );
+  //  printInt(0x80 + 15, data.speed, 3 );
+   // printInt(0xC0 + 6, data.anaIn[1], 3 );
 #ifdef DIGIFANT_KLINE
     printInt(ystart[2]+10, mController.df_kline_active_frame, 1);
     printInt(ystart[2]+15, mController.df_kline_freq_milliseconds, 2);
@@ -831,13 +889,41 @@ void LCDController::screen2_draw() {
 }
 
 void LCDController::screen3_init() {
-	cgramVertBar();
-	scopeMin=0;
-	scopeMax=5000;
+
+	lcd.lcdCommandWriteAndPrintIn_P (0x80, PSTR("RPM"));
+	lcd.lcdCommandWriteAndPrintIn_P (0xC0, PSTR("SPD"));
+	lcd.lcdCommandWriteAndPrintIn_P (0x94, PSTR("TPS"));
+	lcd.lcdCommandWriteAndPrintIn_P (0xD4, PSTR("vDC"));
+	lcd.lcdCommandWriteAndPrintIn_P (0x94+10, PSTR(">"));
+	lcd.lcdCommandWriteAndPrintIn_P (0x94+15, PSTR(">"));
+	lcd.lcdCommandWriteAndPrintIn_P (0x80+10, PSTR("TS>"));
+	lcd.lcdCommandWriteAndPrintIn_P (0xD4+10, PSTR("GEAR"));
+	lcd.lcdCommandWriteAndPrintIn_P (0xC0+10, PSTR("o2>"));
+
+
+
+
+
+	//cgramVertBar();
+	//scopeMin=0;
+	//scopeMax=5000;
 }
 void LCDController::screen3_draw() {
+
+
+
+	printInt(0xC0 + 4, data.speed, 3 );
+	printInt(0xD4 + 15, data.gear, 1 );
+	printInt(ystart[0] +4, data.calRPM, 5);  //RPM
+	printInt(ystart[2] +4, data.calThrottle, 5);  //TPS
+	printInt(ystart[3] +4, data.batVolt, 5);  //12vDC
+	printLong (ystart[0] + 13, data.efr_speed, 6);  //EFR turbocharger speed
+	printInt(ystart[2] + 11, data.calEgt[6], 4 );
+	printInt(ystart[2] + 16, data.calEgt[7], 4 );
+	printFloat2DP(ystart[1] + 13, data.calLambdaF);
+
 	//new Constrains if needed
-	int ScopeVal = 0;
+//	int ScopeVal = 0;
 
 //	switch(flags.f.mode){
 //	case SCOPE_BOOST:
@@ -858,30 +944,30 @@ void LCDController::screen3_draw() {
 //	default:
 //		break;
 //	}
-	ScopeVal = data.calLambda;
+//	ScopeVal = data.calLambda;
 
 //#ifdef LCDTEST
-	ScopeVal = random (5000);
+//	ScopeVal = random (5000);
 //#endif
 
-	if(ScopeVal < scopeMin)    {
-		scopeMin = ScopeVal;
-	}
-	if(ScopeVal > scopeMax)    {
-		scopeMax = ScopeVal;
-	}
+//	if(ScopeVal < scopeMin)    {
+//		scopeMin = ScopeVal;
+//	}
+//	if(ScopeVal > scopeMax)    {
+//		scopeMax = ScopeVal;
+//	}
 
 	//Get the Data:
-	int d = 0;
+//	int d = 0;
 //	d = map(ScopeVal, scopeMin, scopeMax, 0, 33);
 //	d = constrain(d, 0, 32);
 
 	//Show only the rightmost bar: (live screen)
-	drawVertBar(d,19);
+//	drawVertBar(d,19);
 
 	//Feed it into the Buffer (on the right side)
-	scopeInt[19] = d;
-	scopeMode();
+//	scopeInt[19] = d;
+//	scopeMode();
 
 	//Draw the Caption:
 	//Line1

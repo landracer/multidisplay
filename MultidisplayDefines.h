@@ -23,15 +23,15 @@
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
 #define MULTIDISPLAY_V2
 #else
-#define MULTIDISPLAY_V1
+// #define MULTIDISPLAY_V1
 #endif
 
 #define WATCHDOG
 
 //choose your engines ecu
 //only one of them should be defined!
-//#define VR6_MOTRONIC
-#define DIGIFANT
+#define VR6_MOTRONIC
+//#define DIGIFANT
 
 #if defined VR6_MOTRONIC
 #include "MultidisplayDefinesVR6.h"
@@ -44,7 +44,7 @@
 #define GEARS 6
 #define GEAR_RECOGNITION
 //215 40 R16
-#define ABROLLUMFANG 1.764
+#define ABROLLUMFANG 2
 //195 50 R15
 //#define ABROLLUMFANG 1.757
 //205 40 R17
@@ -54,7 +54,7 @@
 #define BOOST_MODE_NORMAL 1
 #define BOOST_MODE_RACE 0
 #define RPM_MIN_FOR_BOOST_CONTROL 0
-#define RPM_MAX_FOR_BOOST_CONTROL 9000
+#define RPM_MAX_FOR_BOOST_CONTROL 10000
 #define BOOST_EFR_SPEEDLIMIT_PROTECTION
 //todo test it!
 #define BOOST_EGT_PROTECTION
@@ -85,14 +85,14 @@
 //#define RPM_DEBUG 0             //Little Frequency Generator
 //#define FREEMEM 0              //Outputs how much free RAM is
 
-#define INITTIME 2000          //How long the Init screen will be shown
+#define INITTIME 3000          //How long the Init screen will be shown
 //--------------------------------------
 
 // V1 Shiftlight Config:
 //#define V1_RPM_SHIFT_LIGHT
-#define V1_RPM_SHIFT_LOW 6000             //Shiftlight half brightness
+#define V1_RPM_SHIFT_LOW 8000             //Shiftlight half brightness
 #define V1_RPM_LOW_BRIGHT 40
-#define V1_RPM_SHIFT_HIGH 6500            //Shiftlight full brightness
+#define V1_RPM_SHIFT_HIGH 9000            //Shiftlight full brightness
 #define V1_RPM_HIGH_BRIGHT 255
 #define V1_RPM_NO_BRIGHT 0                //Shiftlight normal brightness
 
@@ -101,13 +101,13 @@
 #define V2_RGB_WARNLED_ON_SHIFTLED123
 //real EFR6758 redline is 154k
 #define V2_RGB_WARNLED_EFR_SPEED_REDLINE 148000
-#define V2_SHIFTLED1PIN 3
+#define V2_SHIFTLED1PIN 39
 #define V2_SHIFTLED2PIN 38
-#define V2_SHIFTLED3PIN 39
+#define V2_SHIFTLED3PIN 3
 
 //--------------------------------------
 
-#define BUTTONHOLD 1000         //ms to trigger a Hold (Every Xms a hold is triggered)
+#define BUTTONHOLD 300         //ms to trigger a Hold (Every Xms a hold is triggered)
 #define SCREENSAVEDELAY 10000	//ms after what it will save the Screen
 
 #define FLASH_TIME 100            //ms the interval when a Limit is exceeded, the LCD will flash with this interval)
@@ -190,15 +190,15 @@
 #define LAMBDAUPPERLIMIT 15
 
 //Calibration for Throttle
-#define THROTTLE_VR6_16BIT_MIN 620
-#define THROTTLE_VR6_16BIT_MAX 3530
+#define THROTTLE_VR6_16BIT_MIN 3530
+#define THROTTLE_VR6_16BIT_MAX 620
 
-#define THROTTLE_VR6_8BIT_MIN 409
-#define THROTTLE_VR6_8BIT_MAX 3600
+#define THROTTLE_VR6_8BIT_MIN 3600
+#define THROTTLE_VR6_8BIT_MAX 409
 
 //#define THROTTLE_S2_MIN 622
-#define THROTTLE_S2_MIN 560
-#define THROTTLE_S2_MAX 3597
+#define THROTTLE_S2_MIN 3597
+#define THROTTLE_S2_MAX 560
 
 
 /* <moved to ecu specific define file> */
@@ -232,13 +232,11 @@
 #define MAX_TYPE_K 1200                //over that will be seen as Open.
 
 
-// PCF8574 on old V1-md01 board. not used anymore on v2-md01
-#define EXPANDER B0100001       // Address with 2 address pins grounded.
+#define EXPANDER B0100001       // Address with 2 address pins grounded. (from the PCF8574)
+#define EXPANDER2 B0100000      // Address with three address pins grounded. (from the PCF8574)
 
-// PCF8574 on md02
-#define EXPANDER2 B0100000      // Address with three address pins grounded.
-// PCF8574A on md02
-//#define EXPANDER2 B0111000     // Address with three address pins grounded.
+//#define EXPANDER B0100001       // Address with 2 address pins grounded. (from the TI's PCF8574AN)
+//#define EXPANDER2 B0111000      // Address with three address pins grounded. (from the TI's PCF8574AN)
 
 #define DEBUGRPM 10
 
@@ -261,8 +259,8 @@ typedef unsigned char byte;
 #define SERIALOUT_BINARY_TAG_GEAR_RATIO_6G 17
 
 //send and receive each SERIALFREQ millisecs!
-#define SERIALFREQ 100
-//#define SERIALFREQ 50
+//#define SERIALFREQ 100
+#define SERIALFREQ 10
 //#define SERIALFREQ 800
 
 //#define OLED
@@ -377,7 +375,6 @@ typedef unsigned char byte;
 #define KWP1281_INTERBLOCK_TIMEOUT 1200
 
 #define KWP1281_DEBUG_TIME 1000
-
 #define KWP1281_COMP(a) (0xFF - a)
 
 
