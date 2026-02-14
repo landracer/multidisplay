@@ -21,17 +21,13 @@
  * Includes
  ******************************************************************************/
 
+/* Only compile AVR EEPROM implementation on AVR targets.
+ * ESP32 provides its own EEPROM emulation via the Arduino core. */
+#if defined(__AVR__)
+
 #include <avr/eeprom.h>
 #include <Arduino.h>
 #include "EEPROM.h"
-
-/******************************************************************************
- * Definitions
- ******************************************************************************/
-
-/******************************************************************************
- * Constructors
- ******************************************************************************/
 
 /******************************************************************************
  * User API
@@ -48,3 +44,5 @@ void EEPROMClass::write(int address, uint8_t value)
 }
 
 EEPROMClass EEPROM;
+
+#endif /* __AVR__ */

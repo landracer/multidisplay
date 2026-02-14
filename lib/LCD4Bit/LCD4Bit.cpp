@@ -26,8 +26,8 @@ extern "C" {
   #include <stdio.h>  //not needed yet
   #include <string.h> //needed for strlen()
   #include <inttypes.h>
-  #include <avr/pgmspace.h>
 }
+#include "PlatformDefs.h"
 #include <Arduino.h>  //all things wiring / arduino
 
 

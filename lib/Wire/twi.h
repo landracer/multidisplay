@@ -17,8 +17,13 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/* AVR-only TWI/I2C hardware abstraction layer.
+ * On ESP32, the Wire library uses its own I2C driver. */
+
 #ifndef twi_h
 #define twi_h
+
+#if defined(__AVR__)
 
   #include <inttypes.h>
 
@@ -52,6 +57,8 @@
   void twi_reply(uint8_t);
   void twi_stop(void);
   void twi_releaseBus(void);
+
+#endif /* __AVR__ */
 
 #endif
 

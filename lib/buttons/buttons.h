@@ -6,6 +6,7 @@
  */
 
 #include <inttypes.h>
+#include <Arduino.h>    /* provides 'byte' type */
 
 #define OneShot 0
 #define Memory 1
@@ -19,7 +20,7 @@
 #define Released 3
 #define Hold 4
 
-typedef uint8_t byte;
+/* Note: 'byte' is defined by Arduino.h — removed conflicting typedef */
 
 
 class Button {

@@ -17,6 +17,20 @@
     along with Multidisplay.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * @file MultidisplayController.cpp
+ * @brief Implementation of the main Multidisplay controller.
+ *
+ * This file contains the core firmware logic including:
+ *   - Software SPI communication with MCP3208 12-bit ADC
+ *   - I2C communication with PCF8574 I/O expanders
+ *   - Sensor data conversion (boost, lambda, RPM, throttle, VDO, Type-K)
+ *   - Serial binary/text protocol for PC communication
+ *   - Button input handling
+ *   - K-line ECU diagnostics (Digifant / KWP1281)
+ *   - Boost controller integration
+ */
+
 #include "MultidisplayController.h"
 #include "LCDController.h"
 #include "RPMBoostController.h"
@@ -25,9 +39,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <avr/io.h>
-#include <avr/pgmspace.h>
-#include <avr/wdt.h>
+#include "PlatformDefs.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -157,18 +169,21 @@ void  MultidisplayController::myconstructor() {
 
 	pinMode (N75PIN, OUTPUT);
 #if defined(MULTIDISPLAY_V2)
-	//http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1235060559/15
-	//Audi S2 N75
-	//30Hz
+	/* Configure Timer1 for ~30 Hz PWM on pin 11 (N75 solenoid).
+	 * The Audi S2 N75 valve requires a low PWM frequency. */
+#ifdef PLATFORM_AVR
 	TCCR1B = (TCCR1B & 0b11111000) | 0x5;
+#elif defined(PLATFORM_ESP32)
+	/* ESP32: use ledcSetup for low-frequency PWM on the N75 pin.
+	 * Channel 0, 30 Hz, 8-bit resolution. */
+	ledcSetup(0, 30, 8);
+	ledcAttachPin(N75PIN, 0);
+#endif
 #else
-
-	//http://www.arduino.cc/playground/Main/TimerPWMCheatsheet
-	//http://www.arcfn.com/2009/07/secrets-of-arduino-pwm.html
-	//set pwm freq tp 30Hz
-	//11
-	//Audi S2 N75
+	/* V1 board: Timer2 prescaler for ~30 Hz on pin 11 */
+#ifdef PLATFORM_AVR
 	TCCR2B = (TCCR2B & 0b11111000) | 0x7;
+#endif
 	//	pinMode (FREEPWM2, OUTPUT);
 	//	TCCR1B = (TCCR1B & 0b11111000) | 0x5;
 #endif
@@ -281,23 +296,19 @@ void  MultidisplayController::myconstructor() {
 
 #ifdef BW_EFR_SPEEDSENSOR
 	pinMode (BW_EFR_SPEEDSENSOR_PIN, INPUT);
-	//enable pull-up
-//	digitalWrite (BW_EFR_SPEEDSENSOR_PIN, HIGH);
-	//normal Port Mode. OC4A, OC4B, OC4C disconnected
-	TCCR4A = 0;
-	//set prescalter to 8
-	//1 timer tick earch 0.5usecs (prescaler 8)
-	TCCR4B = 2;
-	//enable noise canceller
-	TCCR4B |= _BV (ICNC4);
-	//enable input capture 4
-	// 1 = trigger on rising edge!
-	TCCR4B |= _BV (ICES4);
-	//enable input capture IRQ
-	bitSet (TIMSK4,ICIE4);
-	// Enable overflow interrupt
-	bitSet (TIMSK4,TOIE4);
-	sei();
+#ifdef PLATFORM_AVR
+	/* Configure Timer4 input capture for BorgWarner EFR turbo speed sensor.
+	 * Prescaler 8 → 1 tick = 0.5 µs at 16 MHz.
+	 * Noise canceller enabled; trigger on rising edge. */
+	TCCR4A = 0;                            /* normal port mode */
+	TCCR4B = 2;                            /* prescaler = 8 */
+	TCCR4B |= _BV (ICNC4);                /* noise canceller */
+	TCCR4B |= _BV (ICES4);                /* rising edge trigger */
+	bitSet (TIMSK4, ICIE4);                /* input capture IRQ */
+	bitSet (TIMSK4, TOIE4);                /* overflow IRQ */
+	sei();                                 /* global interrupt enable */
+#endif /* PLATFORM_AVR */
+	/* TODO: ESP32 EFR speed sensor — use PCNT or MCPWM capture */
 #endif
 
 	pinMode (V2_SHIFTLED1PIN, OUTPUT);
@@ -310,30 +321,32 @@ void  MultidisplayController::myconstructor() {
 
 }
 
-#ifdef BW_EFR_SPEEDSENSOR
+/* AVR Timer4 input-capture ISR for BorgWarner EFR turbo speed sensor.
+ * Measures the time between rising and falling edges to compute turbo RPM. */
+#if defined(BW_EFR_SPEEDSENSOR) && defined(PLATFORM_AVR)
 ISR(TIMER4_CAPT_vect) {
 	if ( bitRead(TCCR4B,ICES4) == 0 ) {
-		//falling edge
+		/* Falling edge: capture the timer count (proportional to blade period) */
 		data.efr_speed_reading = ICR4;
-		//reset
-		TCNT4 = 0;
+		TCNT4 = 0;                         /* reset timer counter */
 	} else {
-		//rising edgke
+		/* Rising edge: just reset the counter */
 		TCNT4 = 0;
 	}
-	//toggle capture
+	/* Toggle edge selection for next capture */
 	TCCR4B ^= _BV(ICES4);
 }
 ISR(TIMER4_OVF_vect) {
-	//we have a timer overflow
-	//set reading to max
+	/* Timer overflow → turbo is spinning too slowly to measure (or stopped) */
 	data.efr_speed_reading = 0xFFFF;
 }
 #endif
 
 /*
- * only for V2 pcb!
+ * Software SPI ADC read — optimised for ATmega2560 with inline ASM.
+ * This function is only valid on AVR targets; on ESP32, use read_adc() instead.
  */
+#ifdef PLATFORM_AVR
 int MultidisplayController::read_adc_fast_mega (uint8_t channel){
 
 	int adcvalue = 0;
@@ -403,7 +416,9 @@ int MultidisplayController::read_adc_fast_mega (uint8_t channel){
 
 	return adcvalue;
 }
+#endif /* PLATFORM_AVR */
 
+#ifdef PLATFORM_AVR
 int MultidisplayController::read_adc_fast (uint8_t channel){
 
 	int adcvalue = 0;
@@ -472,6 +487,7 @@ int MultidisplayController::read_adc_fast (uint8_t channel){
 
 	return adcvalue;
 }
+#endif /* PLATFORM_AVR */
 
 
 
@@ -535,32 +551,48 @@ int MultidisplayController::read_adc(uint8_t channel){
 
 
 //http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1173047782/5
+/**
+ * Write a byte to the first PCF8574 I/O expander over I2C.
+ * Used for button reading and misc I/O control.
+ */
 void MultidisplayController::expanderWrite(byte _data) {
 	wire.beginTransmission(EXPANDER);
-	wire.send(_data);
+	wire.write(_data);
 	wire.endTransmission();
 }
 
+/**
+ * Write a byte to the second PCF8574 I/O expander over I2C.
+ * Controls MCP3208 chip-select lines and analog mux channel selection.
+ */
 void MultidisplayController::expanderWrite2(byte _data) {
 	wire.beginTransmission(EXPANDER2);
-	wire.send(_data);
+	wire.write(_data);
 	wire.endTransmission();
 }
 
+/**
+ * Read a byte from the second PCF8574 I/O expander.
+ * @return The current state of the 8 I/O pins.
+ */
 byte MultidisplayController::expanderRead2() {
 	byte _data = 0;
 	wire.requestFrom(EXPANDER2, 1);
 	if(wire.available()) {
-		_data = wire.receive();
+		_data = wire.read();
 	}
 	return _data;
 }
 
+/**
+ * Read a byte from the first PCF8574 I/O expander (buttons).
+ * @return The current state of the 8 I/O pins.
+ */
 byte MultidisplayController::expanderRead() {
 	byte _data = 0;
 	wire.requestFrom(EXPANDER, 1);
 	if(wire.available()) {
-		_data = wire.receive();
+		_data = wire.read();
 	}
 	return _data;
 }
@@ -1168,19 +1200,23 @@ void MultidisplayController::serialReceive() {
 }
 
 
+/**
+ * Send an ACK frame to the PC: STX + TAG_ACK + serial + ETX
+ * @param serial  sequence number echoed back to the sender
+ */
 void MultidisplayController::serialSendAck (uint8_t serial) {
-	Serial.print("\2");
+	Serial.write(SERIAL_STX_BYTE);
 	uint8_t outbuf = SERIALOUT_BINARY_TAG_ACK;
 	Serial.write ( (uint8_t*) &(outbuf), sizeof(uint8_t) );
 	Serial.write ( (uint8_t*) &(serial), sizeof(uint8_t) );
-	Serial.print("\3");
+	Serial.write(SERIAL_ETX_BYTE);
 }
 
 #ifdef GEAR_RECOGNITION
 void MultidisplayController::serialSendGearRatioMap (uint8_t serial) {
 	if ( GEARS != 6 )
 		return; //unimplemented!
-	Serial.print("\2");
+	Serial.write(SERIAL_STX_BYTE);
 	uint8_t outbuf = SERIALOUT_BINARY_TAG_GEAR_RATIO_6G;
 	Serial.write ( (uint8_t*) &(outbuf), sizeof(uint8_t) );
 	Serial.write ( (uint8_t*) &(serial), sizeof(uint8_t) );
@@ -1190,7 +1226,7 @@ void MultidisplayController::serialSendGearRatioMap (uint8_t serial) {
 		uint16_t out = float2fixedintb1000( gear_ratio[i] );
 		Serial.write ( (uint8_t*) &(out), sizeof(uint16_t) );
 	}
-	Serial.print("\3");
+	Serial.write(SERIAL_ETX_BYTE);
 }
 #endif
 
@@ -1289,9 +1325,9 @@ void MultidisplayController::readSettingsFromEeprom() {
 void MultidisplayController::serialSend() {
 
 	if ( SerOut != SERIALOUT_DISABLED ) {
-		Serial.print("\2");
+		Serial.write(SERIAL_STX_BYTE);
 #if defined(MULTIDISPLAY_V2) && defined(BLUETOOTH_ON_SERIAL2)
-		Serial2.print("\2");
+		Serial2.write(SERIAL_STX_BYTE);
 #endif
 
 	}
@@ -1544,9 +1580,9 @@ void MultidisplayController::serialSend() {
 	}
 
 	if ( SerOut != SERIALOUT_DISABLED ) {
-		Serial.print("\3");
+		Serial.write(SERIAL_ETX_BYTE);
 #if defined(MULTIDISPLAY_V2) && defined(BLUETOOTH_ON_SERIAL2)
-		Serial2.print("\3");
+		Serial2.write(SERIAL_ETX_BYTE);
 #endif
 	}
 }
@@ -1870,17 +1906,21 @@ void MultidisplayController::CheckLimits()
 void MultidisplayController::mainLoop() {
 
 #ifdef WATCHDOG
-	wdt_reset();
+	PLATFORM_WDT_RESET();
 #endif
 
 	//Current Time:
 	time = millis();
 
-	//Read in all Analog values:
+	/* Read all 16 external ADC channels via software SPI.
+	 * On AVR Mega, use the optimised inline-ASM version.
+	 * On other platforms, fall back to the portable digitalWrite version. */
 	for(uint8_t i = 1; i <=16;i++) {
+#ifdef PLATFORM_AVR
 		data.anaIn[i] = read_adc_fast_mega (i);
-//		data.anaIn[i] = read_adc_fast (i);
-//		data.anaIn[i] = read_adc (i);
+#else
+		data.anaIn[i] = read_adc (i);
+#endif
 	}
 
 #ifdef LAMBDASTANDALONE
@@ -1972,7 +2012,12 @@ void MultidisplayController::mainLoop() {
 //	else
 //		boostController.boostOutput = 50;
 
+	/* Write the computed duty cycle to the N75 solenoid */
+#ifdef PLATFORM_ESP32
+	ledcWrite(0, (int) boostController.boostOutput);
+#else
 	analogWrite(N75PIN, (int) boostController.boostOutput);
+#endif
 //	analogWrite(FREEPWM2, (int) boostController.boostOutput);
 #endif
 

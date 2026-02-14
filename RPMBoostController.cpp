@@ -21,6 +21,7 @@
 #include "RPMBoostController.h"
 #include "Map16x1.h"
 #include "SensorData.h"
+#include "PlatformDefs.h"
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include "EEPROM.h"
@@ -181,8 +182,16 @@ void RPMBoostController::compute () {
 
 }
 
+/**
+ * Send a duty-cycle map for a specific gear and mode over serial.
+ * Frame format: STX + TAG_N75_DUTY_MAP + gear + mode + serial + 16 bytes map + ETX
+ *
+ * @param gear   gear index (0 to GEARS-1)
+ * @param mode   0 = low boost, 1 = high boost
+ * @param serial sequence number for request/response matching
+ */
 void RPMBoostController::serialSendDutyMap ( uint8_t gear, uint8_t mode, uint8_t serial ) {
-	Serial.print("\2");
+	Serial.write(SERIAL_STX_BYTE);
 	uint8_t outbuf = SERIALOUT_BINARY_TAG_N75_DUTY_MAP;
 	Serial.write ( (uint8_t*) &(outbuf), sizeof(uint8_t) );
 	Serial.write ( (uint8_t*) &(gear), sizeof(uint8_t) );
@@ -195,11 +204,16 @@ void RPMBoostController::serialSendDutyMap ( uint8_t gear, uint8_t mode, uint8_t
 		else
 			Serial.write ( (uint8_t*) &( highboost_duty_cycle[gear]->data[i] ), sizeof(uint8_t) );
 
-	Serial.print("\3");
+	Serial.write(SERIAL_ETX_BYTE);
 }
 
+/**
+ * Send a PID boost setpoint map for a specific gear and mode over serial.
+ * Values are transmitted as 16-bit fixed-point integers (base 100).
+ * Frame format: STX + TAG_N75_SETPOINT_MAP + gear + mode + serial + 32 bytes + ETX
+ */
 void RPMBoostController::serialSendSetpointMap ( uint8_t gear, uint8_t mode, uint8_t serial ) {
-	Serial.print("\2");
+	Serial.write(SERIAL_STX_BYTE);
 	int outbuf = SERIALOUT_BINARY_TAG_N75_SETPOINT_MAP;
 	Serial.write ( (uint8_t*) &(outbuf), sizeof(uint8_t) );
 	Serial.write ( (uint8_t*) &(gear), sizeof(uint8_t) );
@@ -213,7 +227,7 @@ void RPMBoostController::serialSendSetpointMap ( uint8_t gear, uint8_t mode, uin
 			outbuf = float2fixedintb100 (highboost_pid_boost[gear]->data[i]);
 		Serial.write ( (uint8_t*) &outbuf, sizeof(int) );
 	}
-	Serial.print("\3");
+	Serial.write(SERIAL_ETX_BYTE);
 }
 
 void RPMBoostController::setDutyMap ( uint8_t gear, uint8_t mode, uint8_t *data ) {
@@ -366,10 +380,13 @@ void RPMBoostController::setN75Params (uint16_t *data) {
 	n75_max_boost = fixedintb1002float ( *data );
 }
 
+/**
+ * Send all N75 PID tuning parameters over serial.
+ * Frame: STX + TAG_N75_PARAMS + serial + aKp,aKi,aKd,cKp,cKi,cKd,aAT,cAT
+ *        (all 16-bit fixed uint16 base 100) + flags(uint8) + bst_limit(uint16) + ETX
+ */
 void RPMBoostController::serialSendN75Params (uint8_t serial) {
-	//STX tag=21 serial aKp aKi aKd cKp cKi cKd aAT cAT (16bit fixed uint16 base 100) flags (uint8 bit0=pid enable) ETX
-
-	Serial.print("\2");
+	Serial.write(SERIAL_STX_BYTE);
 	uint8_t outbuf = SERIALOUT_BINARY_TAG_N75_PARAMS;
 	Serial.write ( (uint8_t*) &(outbuf), sizeof(uint8_t) );
 	Serial.write ( (uint8_t*) &(serial), sizeof(uint8_t) );
@@ -400,6 +417,6 @@ void RPMBoostController::serialSendN75Params (uint8_t serial) {
 	outbuf16 = float2fixedintb100(n75_max_boost);
 	Serial.write ( (uint8_t*) &outbuf16, sizeof(uint16_t) );
 
-	Serial.print("\3");
+	Serial.write(SERIAL_ETX_BYTE);
 
 }

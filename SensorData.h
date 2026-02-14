@@ -18,6 +18,18 @@
 */
 
 
+/**
+ * @file SensorData.h
+ * @brief Central data structure holding all current and max sensor readings.
+ *
+ * The SensorData class is the single source of truth for all live sensor
+ * values.  It is populated by MultidisplayController::AnaConversion() and
+ * read by the display, serial output, and boost control subsystems.
+ *
+ * MaxDataSet stores snapshot values for "max event" recording (e.g. max
+ * boost, max RPM, max EGT) so they can be displayed or logged later.
+ */
+
 #ifndef SENSORDATA_H
 #define SENSORDATA_H
 

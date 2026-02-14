@@ -21,7 +21,7 @@
 #define OLEDCONTROLLER_H_
 
 
-#include <libs/Goldelox_Serial_4DLib.h>
+#include <Goldelox_Serial_4DLib.h>
 
 class OledController {
 public:

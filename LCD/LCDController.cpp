@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <avr/pgmspace.h>
+#include "PlatformDefs.h"
 #include <Arduino.h>
 
 #include "MultidisplayDefines.h"

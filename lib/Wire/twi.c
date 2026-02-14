@@ -17,6 +17,9 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/* AVR-only TWI/I2C hardware driver. Compiled only on AVR targets. */
+#if defined(__AVR__)
+
 #include <math.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -477,3 +480,4 @@ SIGNAL(TWI_vect)
   }
 }
 
+#endif /* __AVR__ */

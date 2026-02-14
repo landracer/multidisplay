@@ -17,8 +17,16 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/*
+ * Bundled TwoWire class for AVR targets.
+ * On ESP32, the Arduino core provides its own Wire.h — this header
+ * is only compiled when building for AVR.
+ */
+
 #ifndef TwoWire_h
 #define TwoWire_h
+
+#if defined(__AVR__)
 
 #include <inttypes.h>
 
@@ -57,11 +65,22 @@ class TwoWire
     void send(char*);
     uint8_t available(void);
     uint8_t receive(void);
+    /* Modern Arduino Wire API aliases (Arduino 1.0+) */
+    void write(uint8_t data)              { send(data); }
+    void write(uint8_t* data, uint8_t qty){ send(data, qty); }
+    void write(int data)                  { send(data); }
+    void write(char* data)                { send(data); }
+    uint8_t read(void)                    { return receive(); }
     void onReceive( void (*)(int) );
     void onRequest( void (*)(void) );
 };
 
 extern TwoWire Wire;
 
-#endif
+#else
+  /* On ESP32, include the platform's Wire library */
+  #include <Wire.h>
+#endif /* __AVR__ */
+
+#endif /* TwoWire_h */
 

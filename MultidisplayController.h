@@ -17,15 +17,34 @@
     along with Multidisplay.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * @file MultidisplayController.h
+ * @brief Main system controller — orchestrates sensor reading, serial I/O,
+ *        display updates, boost control, K-line diagnostics, and button handling.
+ *
+ * This is the central class that ties together all subsystems of the
+ * Multidisplay firmware.  The mainLoop() method is called repeatedly from
+ * main() / loop() and performs:
+ *   1. Read all 16 MCP3208 ADC channels (software SPI)
+ *   2. Convert raw ADC readings to calibrated engineering units
+ *   3. Read Type-K thermocouples via analog mux (state machine)
+ *   4. Update shift/warning LEDs
+ *   5. Refresh the LCD/OLED display
+ *   6. Process button inputs
+ *   7. Compute N75 boost controller output (PID)
+ *   8. Handle K-line ECU diagnostics (Digifant / KWP1281)
+ *   9. Send/receive serial data to/from PC or smartphone
+ */
+
 #ifndef MULTIDISPLAYCONTROLLER_H_
 #define MULTIDISPLAYCONTROLLER_H_
 
-#include"MultidisplayDefines.h"
+#include "MultidisplayDefines.h"
+#include "PlatformDefs.h"
 #include "util.h"
 
-#include<Wire.h>
-#include <avr/pgmspace.h>
-#include"SensorData.h"
+#include <Wire.h>
+#include "SensorData.h"
 #include "LCD/LCDController.h"
 #include "OledController.h"
 
@@ -272,12 +291,17 @@ public:
 	unsigned long kwp1281_kline_millis_last_byte_received;
 	unsigned long kwp1281_kline_millis_last_byte_send;
 
-//	inline void setKLHigh () { PORTA |=  128; PORTD |= 8; PORTH |= 2; PORTJ |= 2;};
-//	inline void setKLLow () { PORTA &=  ~128; PORTD &= ~8; PORTH &= ~2; PORTJ &= ~2;};
-//	inline void setKLow () { PORTD &= ~8; PORTH &= ~2; PORTJ &= ~2;};
+	/* K-line bit-banging helpers — direct port register manipulation (AVR only).
+	 * On ESP32, use GPIO matrix or UART peripheral instead. */
+#ifdef PLATFORM_AVR
 	inline void setKLHigh () { PORTA |=  128; PORTD |= 8; };
 	inline void setKLLow () { PORTA &=  ~128; PORTD &= ~8; };
 	inline void setKLow () { PORTD &= ~8; };
+#else
+	inline void setKLHigh () { /* TODO: ESP32 KWP1281 K-line GPIO */ };
+	inline void setKLLow () { /* TODO: ESP32 KWP1281 K-line GPIO */ };
+	inline void setKLow () { /* TODO: ESP32 KWP1281 K-line GPIO */ };
+#endif
 	inline void sendFiveBaudBit (int bit);
 	void kwp1281SendControllerAddress(uint8_t address);
 //	bool kwp1281Connect ();
