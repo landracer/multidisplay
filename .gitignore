@@ -1,0 +1,17 @@
+# Build artifacts
+*.o
+*.elf
+*.hex
+*.bin
+*.d
+*.map
+
+# IDE files
+.settings/
+.cproject
+.project
+Debug/
+Release/
+
+# CodeQL artifacts
+_codeql_detected_source_root
