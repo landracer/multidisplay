@@ -57,6 +57,12 @@ class TwoWire
     void send(char*);
     uint8_t available(void);
     uint8_t receive(void);
+    /* Modern Arduino Wire API aliases (Arduino 1.0+) */
+    void write(uint8_t data)              { send(data); }
+    void write(uint8_t* data, uint8_t qty){ send(data, qty); }
+    void write(int data)                  { send(data); }
+    void write(char* data)                { send(data); }
+    uint8_t read(void)                    { return receive(); }
     void onReceive( void (*)(int) );
     void onRequest( void (*)(void) );
 };

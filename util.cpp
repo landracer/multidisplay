@@ -17,17 +17,33 @@
     along with Multidisplay.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * @file util.cpp
+ * @brief Implementation of utility helpers for EEPROM I/O, fixed-point math,
+ *        free-memory reporting, and watchdog configuration.
+ */
+
 #include <stdlib.h>
-#include <avr/common.h>
-#include <avr/io.h>
+#include "PlatformDefs.h"
 #include "util.h"
 #include "EEPROM.h"
 
+/* ========================================================================== */
+/*  Free Memory (AVR only)                                                    */
+/* ========================================================================== */
+
+#ifdef PLATFORM_AVR
+#include <avr/common.h>
+#include <avr/io.h>
+
 extern char * const __brkval;
 
+/**
+ * Returns the number of free bytes between the top of the heap and the
+ * bottom of the stack on AVR.  Useful for detecting memory exhaustion.
+ * Reference: http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1246358387
+ */
 uint16_t freeMem(void) {
-	//Free Mem: http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1246358387
-
 	char *brkval;
 	char *cp;
 
@@ -44,9 +60,30 @@ uint16_t freeMem(void) {
 	return cp - brkval;
 }
 
-//http://www.openobject.org/opensourceurbanism/Storing_Data
-void EEPROMWriteLong(int p_address, long p_value)
-{
+#else
+/* On ESP32 and other platforms, use the SDK's heap reporting. */
+uint16_t freeMem(void) {
+#ifdef PLATFORM_ESP32
+	uint32_t f = ESP.getFreeHeap();
+	return (f > 0xFFFF) ? 0xFFFF : (uint16_t)f;
+#else
+	return 0;
+#endif
+}
+#endif /* PLATFORM_AVR */
+
+/* ========================================================================== */
+/*  EEPROM Multi-Byte Helpers                                                 */
+/* ========================================================================== */
+/*
+ * The EEPROM library provides only single-byte read()/write().
+ * These helpers store larger types by splitting them into bytes
+ * in little-endian order.
+ *
+ * Reference: http://www.openobject.org/opensourceurbanism/Storing_Data
+ */
+
+void EEPROMWriteLong(int p_address, long p_value) {
 	byte Byte1 = ((p_value >> 0) & 0xFF);
 	byte Byte2 = ((p_value >> 8) & 0xFF);
 	byte Byte3 = ((p_value >> 16) & 0xFF);
@@ -66,7 +103,7 @@ long EEPROMReadLong(int p_address) {
 
 	long firstTwoBytes = ((Byte1 << 0) & 0xFF) + ((Byte2 << 8) & 0xFF00);
 	long secondTwoBytes = (((Byte3 << 0) & 0xFF) + ((Byte4 << 8) & 0xFF00));
-	secondTwoBytes *= 65536; // multiply by 2 to power 16 - bit shift 24 to the left
+	secondTwoBytes *= 65536; /* bit-shift left 16 */
 
 	return (firstTwoBytes + secondTwoBytes);
 }
@@ -77,14 +114,25 @@ void EEPROMWriteuint16(int p_address, uint16_t p_value) {
 
 	EEPROM.write(p_address, l);
 	EEPROM.write(p_address + 1, h);
-
 }
+
 uint16_t EEPROMReaduint16(int p_address) {
 	byte l = EEPROM.read(p_address);
 	byte h = EEPROM.read(p_address + 1);
 	uint16_t r = (h << 8) + l;
 	return r;
 }
+
+/* ========================================================================== */
+/*  Fixed-Point ↔ Float Conversions                                          */
+/* ========================================================================== */
+/*
+ * The serial protocol and EEPROM storage use fixed-point integers to avoid
+ * the overhead and ambiguity of transmitting IEEE-754 floats over the wire.
+ *
+ * "b100" = base 100  → multiply by 100 to store, divide by 100 to recover.
+ * "b1000" = base 1000 → used for gear ratios that need finer resolution.
+ */
 
 uint16_t float2fixedintb100 (float in) {
 	return (uint16_t) (in * 100.0);
@@ -106,29 +154,45 @@ float fixedintb10002float (uint16_t in) {
 	return (float) (in / 1000.0);
 }
 
-void watchdogOn() {
-	//http://forum.arduino.cc/index.php?topic=176329.0
+/* ========================================================================== */
+/*  Watchdog Timer Setup                                                      */
+/* ========================================================================== */
 
-	// Clear the reset flag, the WDRF bit (bit 3) of MCUSR.
+#ifdef PLATFORM_AVR
+/**
+ * Configure the AVR hardware watchdog timer.
+ * Timeout is set to approximately 4 seconds with interrupt-on-timeout.
+ * The main loop must call wdt_reset() (via PLATFORM_WDT_RESET()) regularly.
+ *
+ * Reference: http://forum.arduino.cc/index.php?topic=176329.0
+ */
+void watchdogOn() {
+	/* Clear the reset flag (WDRF bit 3 of MCUSR) */
 	MCUSR = MCUSR & 0b11110111;
 
-	// Set the WDCE bit (bit 4) and the WDE bit (bit 3)
-	// of WDTCSR. The WDCE bit must be set in order to
-	// change WDE or the watchdog prescalers. Setting the
-	// WDCE bit will allow updtaes to the prescalers and
-	// WDE for 4 clock cycles then it will be reset by
-	// hardware.
+	/* Set WDCE (bit 4) and WDE (bit 3) — allows prescaler changes for 4 cycles */
 	WDTCSR = WDTCSR | 0b00011000;
 
-	// Set the watchdog timeout prescaler value to 256 K
-	// which will yeild a time-out interval of about 2.0 s.
-	//WDTCSR = 0b00000111;
-	//4secs
+	/* Set watchdog prescaler: 0b00100000 = ~4 seconds timeout */
 	WDTCSR = 0b00100000;
-	//8secs
-	//WDTCSR = 0b00100001;
+	/* Alternative: 0b00000111 = ~2 seconds, 0b00100001 = ~8 seconds */
 
-	// Enable the watchdog timer interupt.
+	/* Enable watchdog interrupt (WDIE bit 6) */
 	WDTCSR = WDTCSR | 0b01000000;
 	MCUSR = MCUSR & 0b11110111;
 }
+
+#elif defined(PLATFORM_ESP32)
+/**
+ * On ESP32 the task watchdog is configured via the esp_task_wdt API.
+ * This is called from PlatformDefs.h PLATFORM_WDT_ENABLE() macro,
+ * but we provide a function wrapper for compatibility with existing code.
+ */
+void watchdogOn() {
+	PLATFORM_WDT_ENABLE();
+}
+
+#else
+/* Generic platform — watchdog not available */
+void watchdogOn() { }
+#endif

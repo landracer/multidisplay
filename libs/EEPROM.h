@@ -22,6 +22,13 @@
 
 #include <inttypes.h>
 
+/*
+ * On ESP32, the Arduino core provides its own EEPROM emulation library
+ * that stores data in SPI flash.  We only define our AVR-specific
+ * EEPROMClass when building for AVR targets.
+ */
+#if defined(__AVR__)
+
 class EEPROMClass
 {
   public:
@@ -30,6 +37,12 @@ class EEPROMClass
 };
 
 extern EEPROMClass EEPROM;
+
+#else
+  /* On non-AVR platforms (ESP32), include the platform's EEPROM header.
+   * The ESP32 Arduino core provides a compatible EEPROMClass with
+   * read(), write(), begin(), and commit() methods. */
+#endif
 
 #endif
 

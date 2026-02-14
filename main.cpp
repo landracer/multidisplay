@@ -17,8 +17,19 @@
     along with Multidisplay.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <avr/wdt.h>
+/**
+ * @file main.cpp
+ * @brief Entry point for the Multidisplay firmware.
+ *
+ * On AVR (Mega 2560), this file provides a bare-metal main() function that
+ * calls init() to set up the Arduino runtime, then enters an infinite loop
+ * running the main controller.
+ *
+ * On ESP32, the standard Arduino setup()/loop() pattern is used instead,
+ * because the ESP-IDF FreeRTOS scheduler manages the main task.
+ */
 
+#include "PlatformDefs.h"
 #include <Arduino.h>
 
 #include "LCDController.h"
@@ -27,16 +38,11 @@
 #include "RPMBoostController.h"
 
 /*
-ToDo:
-- (5) Throttle Calib
-- (5) RPM Calib (there should be a real method, not just a factor...)
-- (4) Setup Screen
-- (5) Battery Meter
-- (3) Make the Bignum Screen flexible for all Values
-- Reserv Anain and a PWM Out for Wastegate controlling...
-- (1) Change tge Typ K reading for the selection to work together with the MCP3208 Chip select !!  be aware read_adc has some debug on the led´s going on!!!
-*/
-
+ * ── Global objects ──────────────────────────────────────────────────────────
+ * These are declared globally so every module can access them via `extern`.
+ * The constructors are intentionally empty; real initialisation happens in
+ * myconstructor() after init() has configured the hardware peripherals.
+ */
 SensorData data;
 
 #ifdef LCD
@@ -44,34 +50,68 @@ LCDController lcdController;
 #endif
 
 MultidisplayController mController;
+
 #ifdef BOOSTN75
 RPMBoostController boostController;
 #endif
-//doesnt work with DisplayTech 204A in 4Bit mode :(
-//LiquidCrystal lcd(4,11, 2, 6,7,8,9);
+
+/* LCD4Bit instance — drives the 20×4 HD44780-compatible character display
+ * in 4-bit parallel mode.  Parameter '4' = number of display lines. */
 LCD4Bit lcd(4);
+
+/* ========================================================================== */
+/*  AVR Entry Point                                                           */
+/* ========================================================================== */
+#ifdef PLATFORM_AVR
 
 int main(void) {
 
-	/* Must call init for arduino to work properly */
-    init();
+	/* init() is provided by the Arduino core — it sets up timers, ADC,
+	 * and other hardware peripherals.  Must be called before any
+	 * Arduino API function (millis, analogRead, Serial, etc.). */
+	init();
 
-    data.myconstructor();
-//#ifdef LCD
-//    lcdController.myconstructor();
-//#endif
+	/* Explicitly call myconstructor() on each global object.
+	 * We avoid using C++ constructors for initialisation because
+	 * the order of global constructor execution is undefined in C++
+	 * and some objects depend on hardware being ready (Wire, Serial). */
+	data.myconstructor();
 #ifdef BOOSTN75
 	boostController.myconstructor();
 #endif
 	mController.myconstructor();
 
+	/* Main loop — never returns.
+	 * All sensor reading, serial I/O, display updates, and boost control
+	 * happen inside mainLoop(). */
 	for (;;)
 		mController.mainLoop();
 
-	// we arent allowed to return from this main function!
+	/* We must never return from main() on AVR. */
 }
 
-//Gentoo Bug
-//http://bugs.gentoo.org/show_bug.cgi?id=147155
-//ln -s /usr/i686-pc-linux-gnu/avr/lib/ldscripts in Debug and Release dir!
-//or -T /usr/lib/binutils/avr/2.19.1/ldscripts/avr5.x as linker option
+#endif /* PLATFORM_AVR */
+
+/* ========================================================================== */
+/*  ESP32 Entry Point (Arduino-style setup / loop)                            */
+/* ========================================================================== */
+#ifdef PLATFORM_ESP32
+
+void setup() {
+	/* On ESP32, init() is called automatically by the Arduino framework
+	 * before setup().  We also need to initialise the EEPROM emulation
+	 * with the required size (see PlatformDefs.h). */
+	EEPROM.begin(PLATFORM_EEPROM_SIZE);
+
+	data.myconstructor();
+#ifdef BOOSTN75
+	boostController.myconstructor();
+#endif
+	mController.myconstructor();
+}
+
+void loop() {
+	mController.mainLoop();
+}
+
+#endif /* PLATFORM_ESP32 */
