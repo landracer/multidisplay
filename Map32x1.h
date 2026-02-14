@@ -1,15 +1,18 @@
-/*
- * Map32x1.h
+/**
+ * @file Map32x1.h
+ * @brief 32-element PROGMEM lookup maps for VDO pressure sensor calibration.
  *
- *  Created on: 26.03.2014
- *      Author: bofh
+ * MapVdo5Bar   – VDO 0-5 bar oil pressure sensor lookup
+ * MapVdo10Bar  – VDO 0-10 bar fuel/gas pressure sensor lookup
+ *
+ * These maps convert 12-bit ADC readings (0-4095) to millibar values
+ * using PROGMEM-stored lookup tables with linear interpolation.
  */
 
 #ifndef MAP32X1_H_
 #define MAP32X1_H_
 
-#include <avr/pgmspace.h>
-
+#include "PlatformDefs.h"
 #include "util.h"
 
 class Map32x1 {

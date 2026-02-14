@@ -21,7 +21,7 @@
 #define LCDCONTROLLER_H_
 
 #include <stdlib.h>
-#include <avr/pgmspace.h>
+#include "PlatformDefs.h"
 #include <LCD4Bit.h>
 
 

@@ -17,11 +17,22 @@
     along with Multidisplay.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * @file Map16x1.h
+ * @brief 16-element lookup maps used for N75 boost control.
+ *
+ * Map16x1       – 8-bit duty-cycle map (one value per RPM slice, 16 slices)
+ * Map16x1Double – floating-point boost-setpoint map (same 16 slices)
+ * MapThrottleBoostReduction – PROGMEM-based throttle→boost reduction curve
+ *
+ * The 256-value RPM range is divided into 16 bins.  Intermediate values
+ * are linearly interpolated between adjacent bins.
+ */
+
 #ifndef MAP16X1_H_
 #define MAP16X1_H_
 
-#include <avr/pgmspace.h>
-
+#include "PlatformDefs.h"
 #include "util.h"
 
 class Map16x1 {

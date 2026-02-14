@@ -20,7 +20,7 @@
 
 #include "Map32x1.h"
 
-#include <avr/eeprom.h>
+#include "PlatformDefs.h"
 #include "stdlib.h"
 #include "EEPROM.h"
 

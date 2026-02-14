@@ -18,7 +18,7 @@
 */
 
 
-#include <avr/eeprom.h>
+#include "PlatformDefs.h"
 
 #include "Map16x1.h"
 #include "stdlib.h"
@@ -77,12 +77,12 @@ double Map16x1Double::map (uint8_t idx) {
 
 void Map16x1Double::loadFromEeprom (int address) {
 	for ( uint8_t i = 0 ; i < 16 ; i++ )
-		*(data+i) = (float)  eeprom_read_word ( (uint16_t*) address + i) / 100.0;
+		*(data+i) = (float) EEPROMReaduint16( address + i*2 ) / 100.0;
 }
 
 void Map16x1Double::writeToEeprom (int address) {
 	for ( uint8_t i = 0 ; i < 16 ; i++ )
-		eeprom_write_word ( (uint16_t*) address + i, (uint16_t) ((*(data+i))*100.0)  );
+		EEPROMWriteuint16 ( address + i*2, (uint16_t) ((*(data+i))*100.0) );
 }
 
 

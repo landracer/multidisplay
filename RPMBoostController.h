@@ -18,6 +18,25 @@
 */
 
 
+/**
+ * @file RPMBoostController.h
+ * @brief N75 turbo wastegate solenoid controller with dual PID loops.
+ *
+ * This module manages the boost-pressure control for turbocharged engines
+ * by driving the N75 solenoid with a PWM duty cycle.  It supports:
+ *
+ *   - Two selectable boost profiles: Normal (daily) and Race (track)
+ *   - Per-gear, RPM-dependent duty-cycle and setpoint maps (16×1 maps)
+ *   - Dual PID tuning: aggressive settings far from setpoint,
+ *     conservative settings when close to the target boost
+ *   - Safety: overboost limiter, EFR turbo overspeed protection,
+ *     exhaust-gas temperature protection
+ *   - All parameters stored in EEPROM and tuneable from the PC GUI
+ *
+ * BOOSTLIMIT              – absolute hard-cap boost pressure (bar)
+ * PID_ACTIVATION_THRESHOLD – minimum boost before PID takes over
+ */
+
 #ifndef RPMBOOSTCONTROLLER_H_
 #define RPMBOOSTCONTROLLER_H_
 
