@@ -103,7 +103,7 @@ long EEPROMReadLong(int p_address) {
 
 	long firstTwoBytes = ((Byte1 << 0) & 0xFF) + ((Byte2 << 8) & 0xFF00);
 	long secondTwoBytes = (((Byte3 << 0) & 0xFF) + ((Byte4 << 8) & 0xFF00));
-	secondTwoBytes *= 65536; /* bit-shift left 16 */
+	secondTwoBytes *= 65536; /* multiply by 2^16 to shift value to upper two bytes */
 
 	return (firstTwoBytes + secondTwoBytes);
 }

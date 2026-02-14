@@ -557,7 +557,7 @@ int MultidisplayController::read_adc(uint8_t channel){
  */
 void MultidisplayController::expanderWrite(byte _data) {
 	wire.beginTransmission(EXPANDER);
-	wire.write(_data);             /* Modern Wire API (was: send) */
+	wire.write(_data);
 	wire.endTransmission();
 }
 
@@ -567,7 +567,7 @@ void MultidisplayController::expanderWrite(byte _data) {
  */
 void MultidisplayController::expanderWrite2(byte _data) {
 	wire.beginTransmission(EXPANDER2);
-	wire.write(_data);             /* Modern Wire API (was: send) */
+	wire.write(_data);
 	wire.endTransmission();
 }
 
@@ -579,7 +579,7 @@ byte MultidisplayController::expanderRead2() {
 	byte _data = 0;
 	wire.requestFrom(EXPANDER2, 1);
 	if(wire.available()) {
-		_data = wire.read();       /* Modern Wire API (was: receive) */
+		_data = wire.read();
 	}
 	return _data;
 }
@@ -592,7 +592,7 @@ byte MultidisplayController::expanderRead() {
 	byte _data = 0;
 	wire.requestFrom(EXPANDER, 1);
 	if(wire.available()) {
-		_data = wire.read();       /* Modern Wire API (was: receive) */
+		_data = wire.read();
 	}
 	return _data;
 }
