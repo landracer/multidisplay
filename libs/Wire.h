@@ -17,8 +17,16 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/*
+ * Bundled TwoWire class for AVR targets.
+ * On ESP32, the Arduino core provides its own Wire.h — this header
+ * is only compiled when building for AVR.
+ */
+
 #ifndef TwoWire_h
 #define TwoWire_h
+
+#if defined(__AVR__)
 
 #include <inttypes.h>
 
@@ -69,5 +77,10 @@ class TwoWire
 
 extern TwoWire Wire;
 
-#endif
+#else
+  /* On ESP32, include the platform's Wire library */
+  #include <Wire.h>
+#endif /* __AVR__ */
+
+#endif /* TwoWire_h */
 

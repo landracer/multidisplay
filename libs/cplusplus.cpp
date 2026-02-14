@@ -1,11 +1,13 @@
 /*
  * cplusplus.cpp
  *
- *  Created on: 01.02.2010
- *      Author: bofh
+ * Minimal C++ runtime support for AVR targets.
+ * ESP32 and other platforms with a full C++ runtime do not need these.
  */
 
 #include <cplusplus.h>
+
+#if defined(__AVR__)
 
  void * operator new(size_t size)
  {
@@ -23,3 +25,5 @@
  void __cxa_guard_abort (__guard *) {};
 
  void __cxa_pure_virtual(void) {};
+
+#endif /* __AVR__ */

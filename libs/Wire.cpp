@@ -17,6 +17,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/* This bundled Wire implementation uses the AVR-specific twi.c driver.
+ * On ESP32, the Arduino core provides its own Wire library. */
+#if defined(__AVR__)
+
 extern "C" {
   #include <stdlib.h>
   #include <string.h>
@@ -263,3 +267,4 @@ void TwoWire::onRequest( void (*function)(void) )
 
 TwoWire Wire = TwoWire();
 
+#endif /* __AVR__ */
