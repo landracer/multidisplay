@@ -1,5 +1,5 @@
 /*
- * cplusplus.hxx
+ * cplusplus.h
  *
  * Minimal C++ runtime support for AVR (new/delete operators, guard functions).
  * On ESP32 and other platforms with a full C++ runtime, these are not needed.
@@ -7,8 +7,8 @@
  * Reference: http://www.avrfreaks.net/index.php?name=PNphpBB2&file=viewtopic&t=59453
  */
 
-#ifndef CPLUSPLUS_HXX_
-#define CPLUSPLUS_HXX_
+#ifndef CPLUSPLUS_H_
+#define CPLUSPLUS_H_
 
 #include <stdlib.h>
 
@@ -28,4 +28,4 @@ extern "C" void __cxa_pure_virtual(void);
 
 #endif /* __AVR__ */
 
-#endif /* CPLUSPLUS_HXX_ */
+#endif /* CPLUSPLUS_H_ */
