@@ -68,6 +68,8 @@ Features:
   * K-line Verbindung zu Bosch Digifant-1 Ecu (Spezial-Chip für Digifant-I von http://digifant-onlineabstimmung.de/ nötig)
   * PC software zum Loggen und Analysieren der Daten
   * Smartphone App für Nokia N900 verfügbar; Android App ist in der Entwicklung
+  * UART und Bluetooth Schnittstellen zur Integration mit externen Systemen wie OpenDash
+  * Unterstützung für Verbindungs-Toggle in OpenDash (MultiDisplay-Connection=true/false)
 
 
 # multidisplay smartphone app for android, maemo and pc app for linux and windows
@@ -82,5 +84,21 @@ We wrote a Qt-app called mUI for linux, windows (pc) and smartphone (android, ma
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=aWx3jh0Cg2A
 " target="_blank"><img src="http://img.youtube.com/vi/aWx3jh0Cg2A/0.jpg" alt="mui app on nokia n900 (maemo)" width="640" height="480" border="10" /></a>
+
+## UART Integration
+
+The multidisplay system can output serial data via UART for integration with external systems like OpenDash. This allows for real-time monitoring and data visualization.
+
+For more information about setting up the UART connection with OpenDash, please see the [UART_SETUP.md](UART_SETUP.md) file in this repository.
+
+## Bluetooth Integration
+
+The multidisplay system can also output serial data via Bluetooth using an HC-06 module connected to Serial2. This allows for wireless connection to external systems like OpenDash.
+
+To configure the Bluetooth module:
+1. Connect the HC-06 module to the multidisplay system via Serial2
+2. Use a serial terminal to connect to the module
+3. Configure the module to connect to "rAtTrax" or "multidisplay" 
+4. The module will then forward the multidisplay serial data to the connected device
 
 
